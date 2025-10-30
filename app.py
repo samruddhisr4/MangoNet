@@ -1,9 +1,32 @@
+import os
+from flask import Flask, request, jsonify, render_template
 from flask import Flask, render_template, request, redirect, url_for
 import os
 from werkzeug.utils import secure_filename
 import tensorflow as tf
 from tensorflow.keras.preprocessing import image
 import numpy as np
+
+app = Flask(__name__)
+
+MODEL_PATH = os.getenv("MODEL_PATH", "C:\Users\samru\OneDrive\Desktop\mangonet\MangoNet\mangonet.ipynb")
+UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "static/uploads")
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# health endpoint for readiness/liveness probes
+@app.route("/healthz")
+def health():
+    return "ok", 200
+
+@app.route("/readyz")
+def ready():
+    # optionally test that model loaded
+    if os.path.exists(MODEL_PATH):
+        return "ready", 200
+    return "model-missing", 500
+
+# existing code uses MODEL_PATH and UPLOAD_FOLDER instead of hard-coded paths
+
 
 app = Flask(__name__)
 
