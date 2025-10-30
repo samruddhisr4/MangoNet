@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Flask==3.0.3
 tensorflow==2.20.0
 keras==2.13.1
@@ -7,3 +8,13 @@ gunicorn==22.0.0
 werkzeug==3.0.3
 protobuf==3.20.3
 setuptools==70.0.0
+=======
+Flask==2.3.2
+tensorflow==2.20.0
+keras==2.13.1
+numpy==1.24.3
+Pillow==10.0.0
+gunicorn==21.2.0
+werkzeug==2.3.6
+protobuf==3.20.3
+>>>>>>> 9a861e048ea4d05d3a65d148059c37301ed2cd36
