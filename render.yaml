@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: MangoNet
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MODEL_PATH
+        value: /opt/render/project/src/mango_classification_model.h5
+      - key: UPLOAD_FOLDER
+        value: /opt/render/project/src/static/uploads

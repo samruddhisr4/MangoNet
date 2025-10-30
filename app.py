@@ -1,32 +1,18 @@
 import os
-from flask import Flask, request, jsonify, render_template
-from flask import Flask, render_template, request, redirect, url_for
-import os
+from flask import Flask, request, jsonify, render_template, render_template, redirect, url_for
 from werkzeug.utils import secure_filename
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 import numpy as np
 
-app = Flask(__name__)
-
-MODEL_PATH = os.getenv("MODEL_PATH", "C:\Users\samru\OneDrive\Desktop\mangonet\MangoNet\mangonet.ipynb")
-UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER", "static/uploads")
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# health endpoint for readiness/liveness probes
-@app.route("/healthz")
-def health():
-    return "ok", 200
-
-@app.route("/readyz")
-def ready():
-    # optionally test that model loaded
-    if os.path.exists(MODEL_PATH):
-        return "ready", 200
-    return "model-missing", 500
-
-# existing code uses MODEL_PATH and UPLOAD_FOLDER instead of hard-coded paths
-
+# Try to import TensorFlow and Keras
+try:
+    import tensorflow as tf
+    from tensorflow.keras.preprocessing import image
+    TF_AVAILABLE = True
+except ImportError:
+    print("TensorFlow/Keras not available")
+    TF_AVAILABLE = False
+    tf = None
+    image = None
 
 app = Flask(__name__)
 
@@ -37,7 +23,13 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Load your trained model (replace with your model path)
 MODEL_PATH = 'mango_classification_model.h5'
-model = tf.keras.models.load_model(MODEL_PATH)
+model = None
+if TF_AVAILABLE:
+    try:
+        model = tf.keras.models.load_model(MODEL_PATH)
+    except Exception as e:
+        print(f"Error loading model: {e}")
+        model = None
 
 # List of class names (replace with your actual classes)
 CLASS_NAMES = ['Anwar Ratool', 'Chaunsa (Black)', 'Chaunsa (Summer Bahisht)', 'Chaunsa (White)', 'Dosehri', 'Fajri', 'Langra', 'Sindhri']
@@ -58,21 +50,28 @@ def upload_file():
     if file.filename == '':
         return redirect(url_for('home'))
     if file:
-        filename = secure_filename(file.filename)
+        filename = secure_filename(file.filename or '')
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
         # Preprocess image
-        img = image.load_img(filepath, target_size=(224, 224))
-        img_array = image.img_to_array(img)
-        img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array / 255.0
+        if TF_AVAILABLE and image is not None:
+            img = image.load_img(filepath, target_size=(224, 224))
+            img_array = image.img_to_array(img)
+            img_array = np.expand_dims(img_array, axis=0)
+            img_array = img_array / 255.0
 
-        # Predict
-        prediction = model.predict(img_array)
-        predicted_class = CLASS_NAMES[np.argmax(prediction)]
+            # Predict
+            if model is not None:
+                prediction = model.predict(img_array)
+                predicted_class = CLASS_NAMES[np.argmax(prediction)]
+            else:
+                predicted_class = "Model not loaded"
+        else:
+            predicted_class = "TensorFlow/Keras not available"
 
         return render_template('results.html', prediction=predicted_class, image_url=filepath)
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     app.run(debug=True)
